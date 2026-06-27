@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Scene-level coordinator for the lobby.
@@ -23,7 +24,7 @@ public class LobbyManager : Singleton<LobbyManager>
     [SerializeField] private Transform[] spawnPoints;
 
     [Header("Ready Zone")]
-    [SerializeField] private ReadyZone readyZone;
+    [SerializeField] private PlayerTriggerZone readyZone;
 
     private readonly Dictionary<int, GameObject> _characters = new();
     private readonly Dictionary<int, bool> _readyState = new();
@@ -31,6 +32,7 @@ public class LobbyManager : Singleton<LobbyManager>
 
     private void OnEnable()
     {
+        PlayerInputManager.instance.EnableJoining();
         PlayerManager.Instance.OnPlayerJoined += HandlePlayerJoined;
         PlayerManager.Instance.OnPlayerLeft += HandlePlayerLeft;
 
@@ -44,6 +46,7 @@ public class LobbyManager : Singleton<LobbyManager>
     {
         if (PlayerManager.Instance == null) return;
 
+        PlayerInputManager.instance.DisableJoining();
         PlayerManager.Instance.OnPlayerJoined -= HandlePlayerJoined;
         PlayerManager.Instance.OnPlayerLeft -= HandlePlayerLeft;
 
@@ -88,6 +91,35 @@ public class LobbyManager : Singleton<LobbyManager>
     // -------------------------------------------------------------------------
     // PlayerController event handlers
     // -------------------------------------------------------------------------
+
+    private readonly HashSet<int> readyPlayers = new();
+
+    public void OnPlayerEnteredReadyZone(SlotIdentifier slot)
+    {
+        readyPlayers.Add(slot.Slot);
+        CheckAllReady();
+    }
+
+    public void OnPlayerExitedReadyZone(SlotIdentifier slot)
+    {
+        readyPlayers.Remove(slot.Slot);
+    }
+
+    private void CheckAllReady()
+    {
+        var activeSlots = PlayerManager.Instance.GetActiveSlots();
+
+        if (activeSlots.Count == 0)
+            return;
+
+        foreach (var slot in activeSlots)
+        {
+            if (!readyPlayers.Contains(slot))
+                return;
+        }
+
+        SceneTransitionManager.Instance.GoToGame();
+    }
 
     private void HandleInteract(int slot)
     {
