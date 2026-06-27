@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class PlayerStatusHUD : MonoBehaviour
 {
-    [SerializeField] private PlayerSpawner _spawner;
     [SerializeField] private PlayerSlotUI[] _slots;
     private Dictionary<PlayerCharacterController, PlayerSlotUI> _playerSlotUIs = new();
+    private Dictionary<int, PlayerCharacterController> _characterForSlot = new();
 
     private void Awake()
     {
@@ -15,31 +15,39 @@ public class PlayerStatusHUD : MonoBehaviour
 
     private void OnEnable()
     {
-        // _spawner.PlayerSpawned.AddListener(OnPlayerSpawned);
-        // _spawner.PlayerDespawned.AddListener(OnPlayerDespawned);
+        PlayerManager.Instance.OnCharacterSpawned += OnPlayerSpawned;
+        PlayerManager.Instance.OnPlayerLeft += OnPlayerDespawned;
         PlayerInventory.OnInventoryChanged += OnInventoryChanged;
     }
 
     private void OnDisable()
     {
-        // _spawner.PlayerSpawned.RemoveListener(OnPlayerSpawned);
-        // _spawner.PlayerDespawned.RemoveListener(OnPlayerDespawned);
+        if (PlayerManager.Instance == null) return;
+
+        PlayerManager.Instance.OnCharacterSpawned -= OnPlayerSpawned;
+        PlayerManager.Instance.OnPlayerLeft -= OnPlayerDespawned;
         PlayerInventory.OnInventoryChanged -= OnInventoryChanged;
     }
 
-    private void OnPlayerSpawned(int playerIndex, PlayerCharacterController player)
+    private void OnPlayerSpawned(int slot, PlayerCharacterController player)
     {
-        if (!IsValidSlot(playerIndex)) return;
-        _slots[playerIndex].SetActive($"Player {playerIndex + 1}");
-        _playerSlotUIs[player] = _slots[playerIndex];
+        if (!IsValidSlot(slot)) return;
+        _slots[slot].SetActive($"Player {slot + 1}");
+        _playerSlotUIs[player] = _slots[slot];
+        _characterForSlot[slot] = player;
         player.boostCooldownChanged.AddListener(OnBoostCooldownChanged);
     }
 
-    private void OnPlayerDespawned(int playerIndex, PlayerCharacterController player)
+    private void OnPlayerDespawned(int slot)
     {
-        if (!IsValidSlot(playerIndex)) return;
-        _slots[playerIndex].SetEmpty(playerIndex);
-        _playerSlotUIs.Remove(player);
+        if (!IsValidSlot(slot)) return;
+        _slots[slot].SetEmpty(slot);
+
+        if (_characterForSlot.TryGetValue(slot, out var player))
+        {
+            _playerSlotUIs.Remove(player);
+            _characterForSlot.Remove(slot);
+        }
     }
 
     private void OnInventoryChanged(int playerIndex, PlayerInventory inventory)

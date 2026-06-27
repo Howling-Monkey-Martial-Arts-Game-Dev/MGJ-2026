@@ -17,6 +17,7 @@ public class PlayerManager : PersistentSingleton<PlayerManager>
 
     public event Action<int> OnPlayerJoined;
     public event Action<int> OnPlayerLeft;
+    public event Action<int, PlayerCharacterController> OnCharacterSpawned;
 
     protected override void Awake()
     {
@@ -125,6 +126,7 @@ public class PlayerManager : PersistentSingleton<PlayerManager>
             character.Init(slot, input.devices.ToArray());
         }
 
+        OnCharacterSpawned?.Invoke(slot, character);
         return character;
     }
 }
