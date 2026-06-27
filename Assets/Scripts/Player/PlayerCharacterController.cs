@@ -88,18 +88,6 @@ public class PlayerCharacterController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        //         m_controlHandler.ProcessIntent(ctx);
-        // _aimVector = m_inputs.Player.Move.
-        // Inputs = ctx;
-        // if (!_isBoosting && _timeUntilBoost == 0f && ctx.Boost)
-        // {
-        //     _isBoosting = true;
-        //     _boostProgress = 0;
-        //     _timeUntilBoost = boostSettings.Cooldown;
-        //     boostCooldownChanged?.Invoke(this, _timeUntilBoost);
-        //     _boostDirection = Vector3.Normalize(new Vector3(_aimVector.x, 0, _aimVector.y));
-        //     Debug.LogFormat("{0} is starting a boost", name);
-        // }
         // Convert from units/sec to units/frame to preserve existing tuning
         _velocity = _rb.linearVelocity * Time.fixedDeltaTime;
 
@@ -152,7 +140,13 @@ public class PlayerCharacterController : MonoBehaviour
 
     internal void PerformBoost()
     {
-        throw new NotImplementedException();
+        if (_isBoosting || _timeUntilBoost > 0f) return;
+
+        _isBoosting = true;
+        _boostProgress = 0f;
+        _timeUntilBoost = boostSettings.Cooldown;
+        boostCooldownChanged?.Invoke(this, _timeUntilBoost);
+        _boostDirection = Vector3.Normalize(new Vector3(_aimVector.x, 0, _aimVector.y));
     }
 
     internal void PerformInteract()
