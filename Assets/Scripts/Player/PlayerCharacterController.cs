@@ -151,6 +151,6 @@ public class PlayerCharacterController : MonoBehaviour
 
     internal void PerformInteract()
     {
-        throw new NotImplementedException();
+        InteractPressed?.Invoke();
     }
 }
