@@ -121,6 +121,8 @@ public class PlayerManager : PersistentSingleton<PlayerManager>
             {
                 controller.AssignCharacter(character);
             }
+
+            character.Init(slot, input.devices.ToArray());
         }
 
         return character;
