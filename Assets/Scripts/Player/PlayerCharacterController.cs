@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 /**
  * Player Character is in charge of driving the movement of the player based on incoming inputs from IControllable
  */
-public class PlayerCharacter : MonoBehaviour, IControllable
+public class PlayerCharacterController : MonoBehaviour
 {
     [SerializeField] private ControlHandler m_controlHandler;
     [SerializeField] private float currentSpeed;
@@ -19,9 +19,8 @@ public class PlayerCharacter : MonoBehaviour, IControllable
     private Vector2 _moveVector;
     public FloatingUI floatingUI;
     public string ControllableID => m_id;
-    public PlayerInputContext Inputs { get; private set; }
     public event Action InteractPressed;
-    public UnityEvent<PlayerCharacter, float> boostCooldownChanged;
+    public UnityEvent<PlayerCharacterController, float> boostCooldownChanged;
 
     private Rigidbody _rb;
 
@@ -33,6 +32,7 @@ public class PlayerCharacter : MonoBehaviour, IControllable
     [SerializeField] private BoostSettings boostSettings;
 
     private PlayerInventory _inventory;
+    private Inputs m_inputs;
     public Gamepad Gamepad { get; private set; }
     private Vector3 _boostDirection;
 
@@ -47,7 +47,7 @@ public class PlayerCharacter : MonoBehaviour, IControllable
         // Stop boosting when we collide with _anything_
         Rumble.Play(this, Gamepad, 0.4f, 0.2f, 0.3f);
 
-        if (!collision.gameObject.TryGetComponent(out PlayerCharacter other))
+        if (!collision.gameObject.TryGetComponent(out PlayerCharacterController other))
         {
             _isBoosting = false;
             return;
@@ -85,8 +85,6 @@ public class PlayerCharacter : MonoBehaviour, IControllable
     }
 
     public ControlHandler ControlHandler => m_controlHandler;
-
-    private void OnDisable() => InputManager.ins.Unregister(this);
 
     private void FixedUpdate()
     {
@@ -135,27 +133,24 @@ public class PlayerCharacter : MonoBehaviour, IControllable
         Gizmos.DrawSphere(moveVector, 1f);
     }
 
-    public void AssertControlIntent(PlayerInputContext ctx)
+    public void SetMoveVector(Vector2 newAimVector)
     {
-        m_controlHandler.ProcessIntent(ctx);
-        _aimVector = ctx.MoveDirection;
-        Inputs = ctx;
-        if (!_isBoosting && _timeUntilBoost == 0f && ctx.Boost)
-        {
-            _isBoosting = true;
-            _boostProgress = 0;
-            _timeUntilBoost = boostSettings.Cooldown;
-            boostCooldownChanged?.Invoke(this, _timeUntilBoost);
-            _boostDirection = Vector3.Normalize(new Vector3(_aimVector.x, 0, _aimVector.y));
-            Debug.LogFormat("{0} is starting a boost", name);
-        }
+        _aimVector = newAimVector;
     }
 
-    public void OnAction(PlayerAction action)
+    internal void PerformBoost()
     {
-        switch (action)
-        {
-            case PlayerAction.Interact: InteractPressed?.Invoke(); break;
-        }
+        if (_isBoosting || _timeUntilBoost > 0f) return;
+
+        _isBoosting = true;
+        _boostProgress = 0f;
+        _timeUntilBoost = boostSettings.Cooldown;
+        boostCooldownChanged?.Invoke(this, _timeUntilBoost);
+        _boostDirection = Vector3.Normalize(new Vector3(_aimVector.x, 0, _aimVector.y));
+    }
+
+    internal void PerformInteract()
+    {
+        InteractPressed?.Invoke();
     }
 }
