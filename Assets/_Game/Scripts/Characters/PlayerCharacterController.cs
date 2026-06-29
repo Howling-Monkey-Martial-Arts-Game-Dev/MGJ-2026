@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -35,6 +36,7 @@ public class PlayerCharacterController : MonoBehaviour
     private Inputs m_inputs;
     public Gamepad Gamepad { get; private set; }
     private Vector3 _boostDirection;
+    private readonly Dictionary<string, Vector3> _externalVelocitySources = new();
 
     private void Awake()
     {
@@ -116,7 +118,8 @@ public class PlayerCharacterController : MonoBehaviour
             boostCooldownChanged?.Invoke(this, _timeUntilBoost);
         }
 
-        _rb.linearVelocity = _velocity / Time.fixedDeltaTime;
+        var externalVelocity = GetTotalExternalVelocity() * Time.fixedDeltaTime;
+        _rb.linearVelocity = (_velocity + externalVelocity) / Time.fixedDeltaTime;
         currentSpeed = _velocity.magnitude;
 
         transform.forward = Vector3.RotateTowards(transform.forward, _velocity.normalized, 1f * Time.fixedDeltaTime, 1f * Time.fixedDeltaTime);
@@ -152,5 +155,26 @@ public class PlayerCharacterController : MonoBehaviour
     internal void PerformInteract()
     {
         InteractPressed?.Invoke();
+    }
+
+    public void SetExternalVelocitySource(string sourceId, Vector3 velocity)
+    {
+        _externalVelocitySources[sourceId] = velocity;
+    }
+
+    public void ClearExternalVelocitySource(string sourceId)
+    {
+        _externalVelocitySources.Remove(sourceId);
+    }
+
+    private Vector3 GetTotalExternalVelocity()
+    {
+        var total = Vector3.zero;
+        foreach (var velocity in _externalVelocitySources.Values)
+        {
+            total += velocity;
+        }
+
+        return total;
     }
 }
