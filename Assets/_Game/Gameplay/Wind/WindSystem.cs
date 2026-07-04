@@ -11,6 +11,7 @@ public class WindSystem : MonoBehaviour
     }
 
     [SerializeField] private WindSettings _windSettings;
+    [SerializeField] private ParticleSystem _windParticles;
 
     private State _state;
     private float _stateTimer;
@@ -98,6 +99,8 @@ public class WindSystem : MonoBehaviour
     {
         _state = State.ACTIVATING;
         _stateTimer = 0f;
+
+        _windParticles.Play();
     }
 
     private void EnterActive()
@@ -110,6 +113,8 @@ public class WindSystem : MonoBehaviour
     {
         _state = State.ENDING;
         _stateTimer = 0f;
+
+        _windParticles.Stop();
 
         foreach (var character in GameManager.Instance.Characters.Values)
         {
