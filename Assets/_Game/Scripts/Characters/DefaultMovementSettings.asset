@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ad4d42cd17929469e1db37d8e3dcd4, type: 3}
   m_Name: DefaultMovementSettings
   m_EditorClassIdentifier: 
-  Acceleration: 0.25
-  DragStrength: 0.1
-  MaxSpeed: 0.2
+  Acceleration: 12.5
+  DragStrength: 5
+  MaxSpeed: 10
